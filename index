@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Analytics Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            border-color: #4facfe;
+        }
+
+        .stat-card h3 {
+            color: #333;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stat-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #4facfe;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .change {
+            font-size: 0.9em;
+            padding: 5px 12px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .positive {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .negative {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .charts-section {
+            padding: 0 30px 30px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .chart-container h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .controls button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .controls button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .controls input[type="date"] {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1em;
+        }
+
+        .page-list {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .page-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+            transition: all 0.3s ease;
+        }
+
+        .page-item:hover {
+            background: #f8f9fa;
+            padding: 15px 10px;
+            border-radius: 8px;
+        }
+
+        .page-item:last-child {
+            border-bottom: none;
+        }
+
+        .page-info {
+            flex: 1;
+        }
+
+        .page-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .page-url {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .page-stats {
+            text-align: right;
+        }
+
+        .clicks {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #4facfe;
+        }
+
+        .icon {
+            width: 24px;
+            height: 24px;
+            display: inline-block;
+        }
+
+        @media (max-width: 768px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Website Analytics Dashboard</h1>
+            <p>ติดตามสถิติการเข้าใช้งานเว็บไซต์ Pharma HS</p>
+        </div>
+
+        <div class="controls">
+            <button onclick="refreshData()">🔄 อัปเดตข้อมูล</button>
+            <button onclick="exportData()">📤 ส่งออกข้อมูล</button>
+            <input type="date" id="startDate" onchange="filterByDate()">
+            <input type="date" id="endDate" onchange="filterByDate()">
+            <button onclick="resetFilter()">🔄 รีเซ็ต</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>👥 ผู้เข้าใช้งานวันนี้</h3>
+                <div class="number" id="todayUsers">0</div>
+                <div class="change positive" id="userChange">+0%</div>
+            </div>
+            <div class="stat-card">
+                <h3>🖱️ คลิกทั้งหมดวันนี้</h3>
+                <div class="number" id="todayClicks">0</div>
+                <div class="change positive" id="clickChange">+0%</div>
+            </div>
+            <div class="stat-card">
+                <h3>📈 ผู้เข้าใช้งานรวม</h3>
+                <div class="number" id="totalUsers">0</div>
+                <div class="change positive">สะสม</div>
+            </div>
+            <div class="stat-card">
+                <h3>📊 คลิกรวมทั้งหมด</h3>
+                <div class="number" id="totalClicks">0</div>
+                <div class="change positive">สะสม</div>
+            </div>
+        </div>
+
+        <div class="charts-section">
+            <div class="chart-container">
+                <h3>📈 ผู้เข้าใช้งานรายวัน</h3>
+                <canvas id="usersChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>🖱️ การคลิกรายวัน</h3>
+                <canvas id="clicksChart"></canvas>
+            </div>
+        </div>
+
+        <div class="page-list">
+            <h3>📄 สถิติการคลิกแต่ละหน้า</h3>
+            <div id="pageStats"></div>
+        </div>
+    </div>
+
+    <script>
+        // จำลองข้อมูลสถิติ
+        let analyticsData = {
+            dailyUsers: [],
+            dailyClicks: [],
+            pageClicks: [],
+            totalUsers: 0,
+            totalClicks: 0
+        };
+
+        // สร้างข้อมูลจำลองสำหรับ 30 วันที่ผ่านมา
+        function generateSampleData() {
+            const pages = [
+                { title: 'หน้าแรก', url: 'https://sites.google.com/view/pharmhs/', clicks: 0 },
+                { title: 'เกี่ยวกับเรา', url: 'https://sites.google.com/view/pharmhs/about', clicks: 0 },
+                { title: 'บริการ', url: 'https://sites.google.com/view/pharmhs/services', clicks: 0 },
+                { title: 'ติดต่อเรา', url: 'https://sites.google.com/view/pharmhs/contact', clicks: 0 },
+                { title: 'ข้อมูลยา', url: 'https://sites.google.com/view/pharmhs/medicine', clicks: 0 }
+            ];
+
+            const today = new Date();
+            analyticsData.dailyUsers = [];
+            analyticsData.dailyClicks = [];
+
+            for (let i = 29; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                
+                const users = Math.floor(Math.random() * 200) + 50;
+                const clicks = Math.floor(Math.random() * 500) + 100;
+                
+                analyticsData.dailyUsers.push({
+                    date: date.toISOString().split('T')[0],
+                    users: users
+                });
+                
+                analyticsData.dailyClicks.push({
+                    date: date.toISOString().split('T')[0],
+                    clicks: clicks
+                });
+            }
+
+            // สร้างข้อมูลคลิกแต่ละหน้า
+            analyticsData.pageClicks = pages.map(page => ({
+                ...page,
+                clicks: Math.floor(Math.random() * 1000) + 100
+            }));
+
+            // คำนวณข้อมูลรวม
+            analyticsData.totalUsers = analyticsData.dailyUsers.reduce((sum, day) => sum + day.users, 0);
+            analyticsData.totalClicks = analyticsData.dailyClicks.reduce((sum, day) => sum + day.clicks, 0);
+        }
+
+        // อัปเดตการแสดงผลสถิติ
+        function updateStats() {
+            const today = analyticsData.dailyUsers[analyticsData.dailyUsers.length - 1];
+            const yesterday = analyticsData.dailyUsers[analyticsData.dailyUsers.length - 2];
+            
+            const todayClicks = analyticsData.dailyClicks[analyticsData.dailyClicks.length - 1];
+            const yesterdayClicks = analyticsData.dailyClicks[analyticsData.dailyClicks.length - 2];
+
+            document.getElementById('todayUsers').textContent = today.users.toLocaleString();
+            document.getElementById('todayClicks').textContent = todayClicks.clicks.toLocaleString();
+            document.getElementById('totalUsers').textContent = analyticsData.totalUsers.toLocaleString();
+            document.getElementById('totalClicks').textContent = analyticsData.totalClicks.toLocaleString();
+
+            // คำนวณการเปลี่ยนแปลง
+            const userChange = ((today.users - yesterday.users) / yesterday.users * 100).toFixed(1);
+            const clickChange = ((todayClicks.clicks - yesterdayClicks.clicks) / yesterdayClicks.clicks * 100).toFixed(1);
+
+            const userChangeEl = document.getElementById('userChange');
+            const clickChangeEl = document.getElementById('clickChange');
+
+            userChangeEl.textContent = `${userChange > 0 ? '+' : ''}${userChange}%`;
+            clickChangeEl.textContent = `${clickChange > 0 ? '+' : ''}${clickChange}%`;
+
+            userChangeEl.className = `change ${userChange > 0 ? 'positive' : 'negative'}`;
+            clickChangeEl.className = `change ${clickChange > 0 ? 'positive' : 'negative'}`;
+        }
+
+        // สร้างกราฟ
+        function createCharts() {
+            const usersCtx = document.getElementById('usersChart').getContext('2d');
+            const clicksCtx = document.getElementById('clicksChart').getContext('2d');
+
+            const dates = analyticsData.dailyUsers.map(day => {
+                const date = new Date(day.date);
+                return date.toLocaleDateString('th-TH', { month: 'short', day: 'numeric' });
+            });
+
+            // กราฟผู้เข้าใช้งาน
+            new Chart(usersCtx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'ผู้เข้าใช้งาน',
+                        data: analyticsData.dailyUsers.map(day => day.users),
+                        borderColor: '#4facfe',
+                        backgroundColor: 'rgba(79, 172, 254, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#4facfe',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+
+            // กราฟการคลิก
+            new Chart(clicksCtx, {
+                type: 'bar',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'การคลิก',
+                        data: analyticsData.dailyClicks.map(day => day.clicks),
+                        backgroundColor: 'rgba(118, 75, 162, 0.8)',
+                        borderColor: '#764ba2',
+                        borderWidth: 1,
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // แสดงสถิติแต่ละหน้า
+        function displayPageStats() {
+            const container = document.getElementById('pageStats');
+            container.innerHTML = '';
+
+            // เรียงลำดับตามจำนวนคลิก
+            const sortedPages = analyticsData.pageClicks.sort((a, b) => b.clicks - a.clicks);
+
+            sortedPages.forEach(page => {
+                const pageElement = document.createElement('div');
+                pageElement.className = 'page-item';
+                pageElement.innerHTML = `
+                    <div class="page-info">
+                        <div class="page-title">${page.title}</div>
+                        <div class="page-url">${page.url}</div>
+                    </div>
+                    <div class="page-stats">
+                        <div class="clicks">${page.clicks.toLocaleString()}</div>
+                        <div>คลิก</div>
+                    </div>
+                `;
+                container.appendChild(pageElement);
+            });
+        }
+
+        // ฟังก์ชันควบคุม
+        function refreshData() {
+            generateSampleData();
+            updateStats();
+            displayPageStats();
+            createCharts();
+        }
+
+        function exportData() {
+            const data = {
+                exported_at: new Date().toISOString(),
+                daily_users: analyticsData.dailyUsers,
+                daily_clicks: analyticsData.dailyClicks,
+                page_clicks: analyticsData.pageClicks,
+                summary: {
+                    total_users: analyticsData.totalUsers,
+                    total_clicks: analyticsData.totalClicks
+                }
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `analytics_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function filterByDate() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            if (startDate && endDate) {
+                // ในการใช้งานจริง ควรกรองข้อมูลตามช่วงวันที่ที่เลือก
+                console.log(`กรองข้อมูลจาก ${startDate} ถึง ${endDate}`);
+            }
+        }
+
+        function resetFilter() {
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            refreshData();
+        }
+
+        // เริ่มต้นแอป
+        document.addEventListener('DOMContentLoaded', function() {
+            generateSampleData();
+            updateStats();
+            displayPageStats();
+            createCharts();
+
+            // ตั้งค่าวันที่เริ่มต้น
+            const today = new Date();
+            const lastWeek = new Date(today);
+            lastWeek.setDate(today.getDate() - 7);
+            
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
+            document.getElementById('startDate').value = lastWeek.toISOString().split('T')[0];
+
+            // อัปเดตข้อมูลทุก 5 นาที (ในการใช้งานจริง)
+            setInterval(() => {
+                // เพิ่มข้อมูลใหม่แบบสุ่ม
+                const lastUser = analyticsData.dailyUsers[analyticsData.dailyUsers.length - 1];
+                const lastClick = analyticsData.dailyClicks[analyticsData.dailyClicks.length - 1];
+                
+                lastUser.users += Math.floor(Math.random() * 10);
+                lastClick.clicks += Math.floor(Math.random() * 20);
+                
+                updateStats();
+            }, 30000); // อัปเดตทุก 30 วินาที
+        });
+    </script>
+</body>
+</html>
